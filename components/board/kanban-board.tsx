@@ -113,9 +113,20 @@ export default function KanbanBoard() {
   // Check if current user can edit/delete this task
   const canEditTask = (task: ITask) => {
     if (!session?.user?.id) return false;
-    const taskUserId =
-      typeof task.userId === 'object' ? task.userId._id : task.userId;
-    return taskUserId.toString() === session.user.id;
+    
+    // Handle both populated (object) and non-populated (string) userId
+    let taskUserId: string;
+    if (typeof task.userId === 'object' && task.userId !== null && '_id' in task.userId) {
+      // Populated user object
+      taskUserId = String(task.userId._id);
+    } else {
+      // String userId
+      taskUserId = String(task.userId);
+    }
+    
+    const currentUserId = String(session.user.id);
+    
+    return taskUserId === currentUserId;
   };
 
   const fetchTasks = async () => {

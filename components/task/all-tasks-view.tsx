@@ -41,10 +41,41 @@ export default function AllTasksView() {
 
   // Check if current user can edit/delete this task
   const canEditTask = (task: ITask) => {
-    if (!session?.user?.id) return false;
-    const taskUserId =
-      typeof task.userId === 'object' ? task.userId._id : task.userId;
-    return taskUserId.toString() === session.user.id;
+    if (!session?.user?.id) {
+      console.log('canEditTask: No session user ID');
+      return false;
+    }
+    
+    // Handle both populated (object) and non-populated (string) userId
+    let taskUserId: string;
+    if (typeof task.userId === 'object' && task.userId !== null && '_id' in task.userId) {
+      // Populated user object - _id might be ObjectId or string after JSON serialization
+      taskUserId = String(task.userId._id);
+    } else {
+      // String userId
+      taskUserId = String(task.userId);
+    }
+    
+    const currentUserId = String(session.user.id);
+    
+    // Normalize both IDs (trim whitespace, ensure they're both strings)
+    const normalizedTaskUserId = taskUserId.trim();
+    const normalizedCurrentUserId = currentUserId.trim();
+    
+    // Debug logging
+    console.log('canEditTask check:', {
+      taskId: task._id,
+      taskTitle: task.title,
+      taskUserId: normalizedTaskUserId,
+      currentUserId: normalizedCurrentUserId,
+      match: normalizedTaskUserId === normalizedCurrentUserId,
+      taskUserIdType: typeof normalizedTaskUserId,
+      currentUserIdType: typeof normalizedCurrentUserId,
+      rawTaskUserId: task.userId,
+      sessionUser: session.user,
+    });
+    
+    return normalizedTaskUserId === normalizedCurrentUserId;
   };
 
   const fetchTasks = useCallback(async () => {
